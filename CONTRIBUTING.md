@@ -1,11 +1,226 @@
 # Contributing
 
-Every contribution to kubenav is welcome, whether it is reporting a bug, submitting a fix, proposing new features or becoming a maintainer. To make contributing to kubenav as easy as possible you will find more details for the development flow in this documentation.
+Every contribution to kubenav is welcome, whether it is reporting a bug,
+submitting a fix, proposing new features or becoming a maintainer. To make
+contributing to kubenav as easy as possible you will find more details for the
+development flow in this documentation.
 
-Please note we have a [Code of Conduct](https://github.com/kubenav/kubenav/blob/master/CODE_OF_CONDUCT.md), please follow it in all your interactions with the project.
+Please note we have a
+[Code of Conduct](https://github.com/kubenav/kubenav/blob/main/CODE_OF_CONDUCT.md),
+please follow it in all your interactions with the project.
 
-We use GitHub to host code, to track issues and feature requests, as well as accept pull requests. Report a bug by opening a new issue. Please always include as much details as possible. For example the platform you run kubenav on is always very helpful. A detailed description to reproduce the bug is also very welcome. If you found a critical security issue they should be submitted directly to admin@kubenav.io. New features should also be discussed via issues first. This will avoid unnecessary work and surely give you and us a good deal of inspiration. Pull requests are the best way to propose changes to the codebase (we use [Github Flow](https://guides.github.com/introduction/flow/index.html)). We actively welcome your pull requests.
+- [Feedback, Issues and Questions](#feedback-issues-and-questions)
+- [Adding new Features](#adding-new-features)
+- [Development](#development)
+  - [Working with the Go Code](#working-with-the-go-code)
+  - [Working with the Flutter Code](#working-with-the-flutter-code)
+    - [Add a Custom Icon](#add-a-custom-icon)
+    - [Add a new Image](#add-a-new-image)
+    - [Update Kubernetes Resources](#update-kubernetes-resources)
+    - [Update the Icons and Splash Screen](#update-the-icons-and-splash-screen)
+    - [Run Release Build on a Device](#run-release-build-on-a-device)
+- [Release](#release)
 
-When you submit code changes, your submissions are understood to be under the same MIT License that covers the project. Feel free to contact the maintainers if that's a concern.
+## Feedback, Issues and Questions
 
-Please also view the [Contributing](https://docs.kubenav.io/contributing/getting-started/) section in our [documentation](https://docs.kubenav.io).
+If you encounter any issue or you have an idea to improve, please:
+
+- Search through
+  [existing open and closed GitHub Issues](https://github.com/kubenav/kubenav/issues)
+  and [discussions](https://github.com/kubenav/kubenav/discussions) for the
+  answer first. If you find a relevant topic, please comment on the issue.
+- If none of the issues are relevant, please add an
+  [issues](https://github.com/kubenav/kubenav/issues) or start a new
+  [discussions](https://github.com/kubenav/kubenav/discussions). Please use the
+  issue templates and provide any relevant information.
+
+If you encounter a security vulnerability, please do not open an issue and
+instead send an email to
+[admin@kubenav.io](mailto:admin@kubenav.io?subject=[GitHub]%20Security%20Vulnerability).
+
+## Adding new Features
+
+When contributing a complex change to the kubenav repository, please discuss the
+change you wish to make within a Github issue with the owners of this repository
+before making the change.
+
+## Development
+
+kubenav uses [Flutter](https://flutter.dev) and [Go](https://go.dev), make sure
+that you have the correct version installed before starting development. You can
+use the following commands to check your installed version:
+
+```sh
+$ flutter --version
+
+Flutter 3.38.5 • channel stable • https://github.com/flutter/flutter.git
+Framework • revision f6ff1529fd (3 weeks ago) • 2025-12-11 11:50:07 -0500
+Engine • hash c108a94d7a8273e112339e6c6833daa06e723a54 (revision 1527ae0ec5) (23 days ago) • 2025-12-11 15:04:31.000Z
+Tools • Dart 3.10.4 • DevTools 2.51.1
+
+$ go version
+
+go version go1.25.5 darwin/arm64
+```
+
+### Working with the Go Code
+
+The Go code for kubenav can be found in the `cmd` folder and we are using the
+[`gomobile`](https://github.com/golang/go/wiki/Mobile) tools. They can be
+installed by running the following two commands:
+
+```sh
+go install golang.org/x/mobile/cmd/gomobile@latest
+gomobile init
+
+go get golang.org/x/mobile/cmd/gomobile
+```
+
+To build the code via the `gomobile` command the `ANDROID_HOME` and
+`ANDROID_NDK_HOME` environment variables must be set. We are using NDK Version
+`27.0.12077973`.
+
+The Android and iOS bindings can then be build using the following Make
+commands:
+
+- `make bindings-android`
+- `make bindings-ios`
+
+We are using `gofmt` to format the Go code.
+
+### Working with the Flutter Code
+
+In the following section we descibe how to use the Flutter code for the app.
+When working with the Flutter code ensure that there are no linting errors when
+you commit your code and that you have sorted all imports.
+
+To sort all imports in the Dart code in a uniformly way you have to run the
+`flutter pub run import_sorter:main` command.
+
+#### Add a Custom Icon
+
+If you have to add a custom icon to the Flutter app we are using
+https://www.fluttericon.com. The configuration file for all existing icons can
+be found at `utils/images/custom-icons/config.json`.
+
+When you add a new custom icon place the `.svg` file in the
+`utils/images/custom-icons` folder. Please also update the `config.json` file.
+The content of the generated Dart class should be placed into the
+`lib/utils/custom_icons.dart` file.
+
+#### Add a new Image
+
+To add a new image to the app, place your `.svg` file in one of the folders in
+the `assets` folder. To generate the corresponding `.png` files the
+`generate.sh` script can be used. The script uses
+[Inkscape](https://inkscape.org) to generate the `.png` files from the `.svg`
+files in all the required resolutions.
+
+#### Update Kubernetes Resources
+
+The Kubernetes resource can be automatically generated. In the first step we
+have to get the OpenAPI schema, by running the following commands:
+
+```sh
+cd utils/schemas/
+./getschema.sh
+```
+
+Afterwards the Dart code for the Kubernetes resources can be generated by
+running the following commands:
+
+```sh
+dart run build_runner build -v --delete-conflicting-outputs
+dart format ./lib/models/kubernetes
+dart fix --apply ./lib/models/kubernetes
+```
+
+#### Update the Icons and Splash Screen
+
+To update the icon for the app or the splash screens the following two commands
+can be used:
+
+```sh
+flutter pub run flutter_launcher_icons:main
+flutter pub run flutter_native_splash:create
+```
+
+The icons can be found in the `utils/images/app-icons` folder. The splash screen
+icons can be found in the `utils/images/splash-screen` folder.
+
+#### Run Debug Build on an Emulator
+
+To list all available emulators the `flutter emulators` command can be used.
+Afterwards the emulators can be started as follows:
+
+```sh
+flutter emulators --launch apple_ios_simulator
+flutter emulators --launch Pixel_4_API_30
+```
+
+To run the app on a started emulator the following can be used:
+
+```sh
+flutter run -d "iPhone 15 Pro Max"
+flutter run -d "sdk gphone arm64"
+```
+
+#### Run Release Build on a Device
+
+To run the release build on a device for testing, we have to get the Device ID
+first by running the following command:
+
+```sh
+$ flutter devices
+
+3 connected devices:
+
+Ricos iPad (mobile) • 00008027-0004785E0A31002E • ios            • iOS 16.2 20C65
+macOS (desktop)     • macos                     • darwin-arm64   • macOS 13.1 22C65 darwin-arm
+Chrome (web)        • chrome                    • web-javascript • Google Chrome 108.0.5359.124
+```
+
+Then we can use one of the listed devices and execute the following command to
+build and run the app on this device:
+
+```sh
+flutter run --release --device-id=00008027-0004785E0A31002E
+```
+
+With the above command we can also savely quit the terminal process (by pressing
+`q`) and continue testing on the device is not connected to our development
+machine.
+
+## Release
+
+To create a new release for Android and iOS which can be published in
+[Google Play](https://play.google.com/store/apps/details?id=io.kubenav.kubenav)
+and the [App Store](https://apps.apple.com/us/app/kubenav/id1494512160) the
+following workflow can be used:
+
+1. Create a file `/android/key.properties` with the following content:
+
+   ```
+   storePassword=
+   keyPassword=
+   keyAlias=upload
+   storeFile=
+   ```
+
+2. Update the `version` key in the `pubspec.yaml` file
+
+3. Delete the `build/` and `.dart_tool/` directories via the `flutter clean`
+   command.
+
+4. Run `make bindings-android` and `make bindings-ios` to build the Go code for
+   kubenav
+
+5. Build the app for Android by running `flutter build appbundle`. The build can
+   be found at `/build/app/outputs/bundle/release/app-release.aab` and must be
+   uploaded to
+   [https://play.google.com/apps/publish](https://play.google.com/apps/publish)
+
+6. Build the app for iOS by running `flutter build ipa`. The build can be found
+   at `/build/ios/archive/Runner.xcarchive` and must be opened in Xcode. In
+   Xcode **Validate App** and **Distribute App** can be used to upload the build
+   to [https://appstoreconnect.apple.com](https://appstoreconnect.apple.com).
